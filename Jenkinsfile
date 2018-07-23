@@ -21,10 +21,10 @@ node{
         echo $HIGH
 
         if [[ $HIGH < 1 ]]; then
-          echo "+++Image $CLAIR_IMAGE has passed scan threshold+++"
+          echo "+++Image $CLAIR_IMAGE has passed vulnerability scan+++"
           docker tag 10.90.1.78/ocp-dev/my-app:0.0.1 10.90.1.78/ocp-dev/my-app:latest
         else
-          echo "---Image $CLAIR_IMAGE has failed scan threshold+++"
+          echo "---Image $CLAIR_IMAGE has failed vulnerability scan +++"
           docker rmi 10.90.1.78/ocp-dev/my-app:0.0.1
           exit 1
         fi'''
@@ -34,5 +34,30 @@ node{
        sh "docker login 10.90.1.78 -u prasen -p ${harborRegistryPwd}"
     }
     sh 'docker push 10.90.1.78/ocp-dev/my-app:latest'
+  }
+  stage('Remove Old Containers'){
+    sshagent(['dev-server']) {
+     try{
+      def sshCmd = 'ssh -o StrictHostKeyChecking=no ec2-user@10.90.1.177'
+      def dockerKil = 'docker kill my-app'
+      sh "${sshCmd} ${dockerKil}"
+     }catch(error){
+         
+    }
+     try{
+      def sshCmd = 'ssh -o StrictHostKeyChecking=no ec2-user@10.90.1.177'
+      def dockerRm = 'docker rm my-app'
+      sh "${sshCmd} ${dockerRm}"
+     }catch(error){
+         
+    }
+   }
+  }
+  stage('Testing - Deploy on Dev Environment'){
+    sshagent(['dev-server']) {
+      def sshCmd = 'ssh -o StrictHostKeyChecking=no ec2-user@10.90.1.177'
+      def dockerRun = 'docker run -it -d --name my-app -p 8080:80 10.90.1.78/ocp-dev/my-app:latest'
+      sh "${sshCmd} ${dockerRun}"
+    }
   }
 }
