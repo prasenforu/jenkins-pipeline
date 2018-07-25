@@ -60,4 +60,11 @@ node{
       sh "${sshCmd} ${dockerRun}"
     }
   }
+  stage('Deploy on Openshift Environment'){
+    sshagent(['dns-server']) {
+      def sshCmd = 'ssh -o StrictHostKeyChecking=no centos@10.90.1.78'
+      def ocRun = '/home/centos/deploy.sh my-app'
+      sh "${sshCmd} ${ocRun}"
+    }
+  }
 }
